@@ -74,7 +74,6 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	stdLog "log"
@@ -395,13 +394,23 @@ type flushSyncWriter interface {
 	io.Writer
 }
 
-func init() {
-	flag.BoolVar(&logging.toStderr, "logtostderr", false, "log to standard error instead of files")
-	flag.BoolVar(&logging.alsoToStderr, "alsologtostderr", false, "log to standard error as well as files")
-	flag.Var(&logging.verbosity, "v", "log level for V logs")
-	flag.Var(&logging.stderrThreshold, "stderrthreshold", "logs at or above this threshold go to stderr")
-	flag.Var(&logging.vmodule, "vmodule", "comma-separated list of pattern=N settings for file-filtered logging")
-	flag.Var(&logging.traceLocation, "log_backtrace_at", "when logging hits line file:N, emit a stack trace")
+type LogConfig struct {
+	ToStderr        bool          `id:"logtostderr" default:"false" desc:"log to standard error instead of files"`
+	AlsoToStderr    bool          `id:"alsologtostderr" default:"false" desc:"log to standard error as well as files"`
+	Verbosity       Level         `id:"v" default:"0" desc:"log level for V logs"`
+	StderrThreshold severity      `id:"stderrthreshold" desc:"logs at or above this threshold go to stderr"`
+	Vmodule         moduleSpec    `id:"vmodule" desc:"comma-separated list of pattern=N settings for file-filtered logging"`
+	TraceLocation   traceLocation `id:"log_backtrace_at" desc:"when logging hits line file:N, emit a stack trace"`
+}
+
+func Init(config *LogConfig) {
+
+	logging.toStderr = config.ToStderr
+	logging.alsoToStderr = config.AlsoToStderr
+	logging.verbosity = config.Verbosity
+	logging.stderrThreshold = config.StderrThreshold
+	logging.vmodule = config.Vmodule
+	logging.traceLocation = config.TraceLocation
 
 	// Default stderrThreshold is ERROR.
 	logging.stderrThreshold = errorLog
@@ -676,10 +685,7 @@ func (l *loggingT) output(s severity, buf *buffer, file string, line int, alsoTo
 		}
 	}
 	data := buf.Bytes()
-	if !flag.Parsed() {
-		os.Stderr.Write([]byte("ERROR: logging before flag.Parse: "))
-		os.Stderr.Write(data)
-	} else if l.toStderr {
+	if l.toStderr {
 		os.Stderr.Write(data)
 	} else {
 		if alsoToStderr || l.alsoToStderr || s >= l.stderrThreshold.get() {
