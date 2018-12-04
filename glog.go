@@ -395,12 +395,16 @@ type flushSyncWriter interface {
 }
 
 type LogConfig struct {
-	ToStderr        bool          `id:"logtostderr" default:"false" desc:"log to standard error instead of files"`
+	ToStderr        bool          `id:"logtostderr" default:"true" desc:"log to standard error instead of files"`
 	AlsoToStderr    bool          `id:"alsologtostderr" default:"false" desc:"log to standard error as well as files"`
 	Verbosity       Level         `id:"v" default:"0" desc:"log level for V logs"`
 	StderrThreshold severity      `id:"stderrthreshold" desc:"logs at or above this threshold go to stderr"`
 	Vmodule         moduleSpec    `id:"vmodule" desc:"comma-separated list of pattern=N settings for file-filtered logging"`
 	TraceLocation   traceLocation `id:"log_backtrace_at" desc:"when logging hits line file:N, emit a stack trace"`
+}
+
+var DefaultConfig = LogConfig{
+	ToStderr: true,
 }
 
 func Init(config *LogConfig) {
